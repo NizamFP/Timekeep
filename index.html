@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layar Atmin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .time-inputs {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .time-input {
+            flex: 1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .timer-display {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .timer-display-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .timer-display-time {
+            font-size: 2.5rem;
+            font-weight: 300;
+            color: #333;
+            font-variant-numeric: tabular-nums;
+            transition: color 0.3s;
+        }
+
+        .timer-display-time.warning {
+            color: #dc3545;
+        }
+
+        .timer-display-time.inactive {
+            color: #999;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        button {
+            flex: 1;
+            padding: 0.875rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-start {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: #218838;
+        }
+
+        .btn-pause {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .btn-pause:hover {
+            background: #e0a800;
+        }
+
+        .btn-pause.resume {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-pause.resume:hover {
+            background: #218838;
+        }
+
+        .btn-reset {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #545b62;
+        }
+
+        .link {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #eee;
+        }
+
+        .link a {
+            color: #007bff;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .link a:hover {
+            text-decoration: underline;
+        }
+
+        .status {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Timekeep OSIS</h1>
+        
+        <div class="input-group">
+            <label>Duration</label>
+            <div class="time-inputs">
+                <div class="time-input">
+                    <label for="minutes">Minutes</label>
+                    <input type="number" id="minutes" min="0" max="999" value="5">
+                </div>
+                <div class="time-input">
+                    <label for="seconds">Seconds</label>
+                    <input type="number" id="seconds" min="0" max="59" value="0">
+                </div>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-start" id="startBtn" onclick="startTimer()">Start</button>
+            <button class="btn-pause" id="pauseBtn" onclick="togglePause()" style="display: none;">Pause</button>
+            <button class="btn-reset" onclick="resetTimer()">Reset</button>
+        </div>
+
+        <div class="status" id="status">Ready</div>
+
+        <div class="timer-display">
+            <div class="timer-display-label">Current Timer</div>
+            <div class="timer-display-time inactive" id="displayTimer">--:--</div>
+        </div>
+
+        <div class="link">
+            <a href="display.html" target="_blank">Layar display →</a>
+        </div>
+    </div>
+
+    <script>
+        function startTimer() {
+            const minutes = parseInt(document.getElementById('minutes').value) || 0;
+            const seconds = parseInt(document.getElementById('seconds').value) || 0;
+            
+            if (minutes === 0 && seconds === 0) {
+                alert('Please enter a valid duration');
+                return;
+            }
+
+            const totalMs = (minutes * 60 * 1000) + (seconds * 1000);
+            const endTime = Date.now() + totalMs;
+            
+            localStorage.setItem('timerEndTime', endTime);
+            localStorage.setItem('timerActive', 'true');
+            localStorage.removeItem('timerPausedAt');
+            localStorage.removeItem('timerRemainingMs');
+            
+            const durationText = minutes > 0 
+                ? `${minutes}m ${seconds}s` 
+                : `${seconds}s`;
+            document.getElementById('status').textContent = `Timer running`;
+            
+            updateButtonStates();
+        }
+
+        function togglePause() {
+            const active = localStorage.getItem('timerActive') === 'true';
+            const pausedAt = localStorage.getItem('timerPausedAt');
+            const pauseBtn = document.getElementById('pauseBtn');
+            
+            if (active && !pausedAt) {
+                // Pause
+                const endTime = parseInt(localStorage.getItem('timerEndTime'));
+                const remainingMs = endTime - Date.now();
+                localStorage.setItem('timerPausedAt', Date.now());
+                localStorage.setItem('timerRemainingMs', remainingMs);
+                document.getElementById('status').textContent = 'Timer paused';
+                pauseBtn.textContent = 'Resume';
+                pauseBtn.classList.add('resume');
+            } else if (pausedAt) {
+                // Resume
+                const remainingMs = parseInt(localStorage.getItem('timerRemainingMs'));
+                const newEndTime = Date.now() + remainingMs;
+                localStorage.setItem('timerEndTime', newEndTime);
+                localStorage.removeItem('timerPausedAt');
+                localStorage.removeItem('timerRemainingMs');
+                document.getElementById('status').textContent = 'Timer resumed';
+                pauseBtn.textContent = 'Pause';
+                pauseBtn.classList.remove('resume');
+            }
+        }
+
+        function resetTimer() {
+            localStorage.removeItem('timerEndTime');
+            localStorage.setItem('timerActive', 'false');
+            localStorage.removeItem('timerPausedAt');
+            localStorage.removeItem('timerRemainingMs');
+            document.getElementById('status').textContent = 'Ready';
+            
+            updateButtonStates();
+        }
+
+        function updateButtonStates() {
+            const active = localStorage.getItem('timerActive') === 'true';
+            const endTime = parseInt(localStorage.getItem('timerEndTime'));
+            const pausedAt = localStorage.getItem('timerPausedAt');
+            const startBtn = document.getElementById('startBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            
+            if (active && endTime && endTime > Date.now()) {
+                startBtn.style.display = 'none';
+                pauseBtn.style.display = 'block';
+                
+                if (pausedAt) {
+                    pauseBtn.textContent = 'Resume';
+                    pauseBtn.classList.add('resume');
+                } else {
+                    pauseBtn.textContent = 'Pause';
+                    pauseBtn.classList.remove('resume');
+                }
+            } else {
+                startBtn.style.display = 'block';
+                pauseBtn.style.display = 'none';
+            }
+        }
+
+        function updateDisplayTimer() {
+            const active = localStorage.getItem('timerActive') === 'true';
+            const endTime = parseInt(localStorage.getItem('timerEndTime'));
+            const pausedAt = localStorage.getItem('timerPausedAt');
+            const displayEl = document.getElementById('displayTimer');
+
+            if (!active || !endTime) {
+                displayEl.textContent = '--:--';
+                displayEl.className = 'timer-display-time inactive';
+                updateButtonStates();
+                return;
+            }
+
+            let remaining;
+            if (pausedAt) {
+                // Paused - show frozen remaining time
+                remaining = parseInt(localStorage.getItem('timerRemainingMs'));
+            } else {
+                // Running - calculate current remaining time
+                const now = Date.now();
+                remaining = endTime - now;
+            }
+
+            if (remaining <= 0) {
+                displayEl.textContent = '0:00';
+                displayEl.className = 'timer-display-time warning';
+                updateButtonStates();
+                return;
+            }
+
+            const totalSeconds = Math.ceil(remaining / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+
+            displayEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            displayEl.className = totalSeconds <= 60 
+                ? 'timer-display-time warning' 
+                : 'timer-display-time';
+        }
+
+        // Update display timer every 100ms
+        setInterval(updateDisplayTimer, 100);
+
+        // Check timer status on load
+        window.addEventListener('load', () => {
+            updateDisplayTimer();
+            updateButtonStates();
+            
+            const active = localStorage.getItem('timerActive') === 'true';
+            const endTime = parseInt(localStorage.getItem('timerEndTime'));
+            const pausedAt = localStorage.getItem('timerPausedAt');
+            
+            if (active && endTime && endTime > Date.now()) {
+                if (pausedAt) {
+                    const remaining = Math.ceil(parseInt(localStorage.getItem('timerRemainingMs')) / 1000);
+                    const minutes = Math.floor(remaining / 60);
+                    const seconds = remaining % 60;
+                    document.getElementById('status').textContent = `Timer paused (${minutes}m ${seconds}s remaining)`;
+                } else {
+                    const remaining = Math.ceil((endTime - Date.now()) / 1000);
+                    const minutes = Math.floor(remaining / 60);
+                    const seconds = remaining % 60;
+                    document.getElementById('status').textContent = `Timer running`;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

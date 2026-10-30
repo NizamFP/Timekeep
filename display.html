@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layar Display</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #000000;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        body.warning-5 {
+            background: #000000;
+        }
+
+        body.warning-3 {
+            background: #000000;
+        }
+
+        body.warning-1 {
+            background: #000000;
+        }
+
+        .timer {
+            font-size: 57vmin;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            transition: color 0.3s ease;
+        }
+
+        body.warning-5 .timer {
+            color: rgb(255, 255, 0);
+        }
+
+        body.warning-3 .timer {
+            color: #ffa500;
+        }
+
+        body.warning-1 .timer {
+            color: #ff0000;
+        }
+
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .flashing {
+            animation: flash 0.5s ease-in-out 6;
+        }
+
+        .ended {
+            font-size: 30vmin;
+            font-weight: 700;
+            color: #888;
+        }
+
+        .overtime {
+            margin-top: 2vmin;
+            font-size: 8vmin;
+            font-weight: 700;
+            color: #ff0000;
+            text-align: center;
+            .overtime-time {
+                display: block;
+                font-size: 16vmin;
+                font-weight: 700;
+                line-height: 1.1;
+            }
+        }
+
+        .timer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .seconds {
+            font-size: 0.5em;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="timer-container">
+        <div class="timer" id="timer">--:--</div>
+        <div class="overtime" id="overtime" style="display: none;"></div>
+    </div>
+
+    <script>
+        let lastWarningState = null;
+        let hasFlashedAt5 = false;
+        let hasFlashedAt3 = false;
+        let hasFlashedAt1 = false;
+
+        function triggerFlash() {
+            const timerEl = document.getElementById('timer');
+            timerEl.classList.add('flashing');
+            setTimeout(() => {
+                timerEl.classList.remove('flashing');
+            }, 3000);
+        }
+
+        function updateTimer() {
+            const overtimeEl = document.getElementById('overtime');
+            const active = localStorage.getItem('timerActive') === 'true';
+            const endTime = parseInt(localStorage.getItem('timerEndTime'));
+            const pausedAt = localStorage.getItem('timerPausedAt');
+            const timerEl = document.getElementById('timer');
+            const body = document.body;
+
+            if (!active || !endTime) {
+                timerEl.textContent = '--:--';
+                timerEl.className = 'timer';
+                body.className = '';
+                lastWarningState = null;
+                hasFlashedAt5 = false;
+                hasFlashedAt3 = false;
+                hasFlashedAt1 = false;
+                return;
+            }
+
+            let remaining;
+            if (pausedAt) {
+                // Paused - show frozen remaining time
+                remaining = parseInt(localStorage.getItem('timerRemainingMs'));
+            } else {
+                // Running - calculate current remaining time
+                const now = Date.now();
+                remaining = endTime - now;
+            }
+
+            if (remaining <= 0) {
+                const overtimeSeconds = Math.floor((Date.now() - endTime) / 1000);
+                const overtimeMinutes = Math.floor(overtimeSeconds / 60);
+                const overtimeRemainder = overtimeSeconds % 60;
+
+                const overtimeText =
+                    `${overtimeMinutes}:${overtimeRemainder.toString().padStart(2, '0')}`;
+
+                timerEl.textContent = 'Time\'s Up';
+                timerEl.className = 'timer ended';
+
+                overtimeEl.innerHTML = `Overtime:<span class="overtime-time">${overtimeText}</span>`;
+                overtimeEl.style.display = 'block';
+
+                body.className = 'warning-1';
+                return;
+            }
+
+            overtimeEl.style.display = 'none';
+            overtimeEl.textContent = '';
+
+            const totalSeconds = Math.ceil(remaining / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+
+            const timeStr = totalSeconds < 60
+                ? `${seconds}`
+                : `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+            timerEl.textContent = timeStr;
+            timerEl.className = 'timer';
+
+            // Only trigger flashing and warnings when NOT paused
+            if (!pausedAt) {
+                // Trigger flashing at specific thresholds
+                if (totalSeconds <= 60 && !hasFlashedAt1) {
+                    hasFlashedAt1 = true;
+                    triggerFlash();
+                } else if (totalSeconds <= 180 && totalSeconds > 60 && !hasFlashedAt3) {
+                    hasFlashedAt3 = true;
+                    triggerFlash();
+                } else if (totalSeconds <= 300 && totalSeconds > 180 && !hasFlashedAt5) {
+                    hasFlashedAt5 = true;
+                    triggerFlash();
+                }
+
+                // Update warning states
+                body.className = '';
+                let currentWarning = null;
+
+                if (totalSeconds <= 60) {
+                    body.className = 'warning-1';
+                    currentWarning = 1;
+                } else if (totalSeconds <= 180) {
+                    body.className = 'warning-3';
+                    currentWarning = 3;
+                } else if (totalSeconds <= 300) {
+                    body.className = 'warning-5';
+                    currentWarning = 5;
+                }
+
+                lastWarningState = currentWarning;
+            } else {
+                // Paused - keep last warning state but don't flash
+                body.className = '';
+                if (totalSeconds <= 60) {
+                    body.className = 'warning-1';
+                } else if (totalSeconds <= 180) {
+                    body.className = 'warning-3';
+                } else if (totalSeconds <= 300) {
+                    body.className = 'warning-5';
+                }
+            }
+        }
+
+        // Update every 100ms for smooth countdown
+        setInterval(updateTimer, 100);
+        updateTimer();
+    </script>
+</body>
+</html>
