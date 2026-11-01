@@ -129,6 +129,8 @@
             if (!active || !endTime) {
                 timerEl.textContent = '--:--';
                 timerEl.className = 'timer';
+                overtimeEl.style.display = 'none';
+                overtimeEl.textContent = '';
                 body.className = '';
                 lastWarningState = null;
                 hasFlashedAt5 = false;
@@ -139,10 +141,10 @@
 
             let remaining;
             if (pausedAt) {
-                // Paused - show frozen remaining time
+
                 remaining = parseInt(localStorage.getItem('timerRemainingMs'));
             } else {
-                // Running - calculate current remaining time
+
                 const now = Date.now();
                 remaining = endTime - now;
             }
@@ -152,8 +154,7 @@
                 const overtimeMinutes = Math.floor(overtimeSeconds / 60);
                 const overtimeRemainder = overtimeSeconds % 60;
 
-                const overtimeText =
-                    `${overtimeMinutes}:${overtimeRemainder.toString().padStart(2, '0')}`;
+                const overtimeText = `${overtimeMinutes}:${overtimeRemainder.toString().padStart(2, '0')}`;
 
                 timerEl.textContent = 'Time\'s Up';
                 timerEl.className = 'timer ended';
@@ -179,9 +180,9 @@
             timerEl.textContent = timeStr;
             timerEl.className = 'timer';
 
-            // Only trigger flashing and warnings when NOT paused
+
             if (!pausedAt) {
-                // Trigger flashing at specific thresholds
+
                 if (totalSeconds <= 60 && !hasFlashedAt1) {
                     hasFlashedAt1 = true;
                     triggerFlash();
@@ -193,7 +194,7 @@
                     triggerFlash();
                 }
 
-                // Update warning states
+
                 body.className = '';
                 let currentWarning = null;
 
@@ -210,7 +211,7 @@
 
                 lastWarningState = currentWarning;
             } else {
-                // Paused - keep last warning state but don't flash
+
                 body.className = '';
                 if (totalSeconds <= 60) {
                     body.className = 'warning-1';
@@ -222,7 +223,7 @@
             }
         }
 
-        // Update every 100ms for smooth countdown
+
         setInterval(updateTimer, 100);
         updateTimer();
     </script>

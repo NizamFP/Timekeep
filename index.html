@@ -180,6 +180,21 @@
             color: #666;
             text-align: center;
         }
+
+        .overtime {
+            margin-top: 0.75rem;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #dc3545;
+            text-align: center;
+        }
+
+        .overtime-time {
+            display: block;
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
     </style>
 </head>
 <body>
@@ -211,6 +226,7 @@
         <div class="timer-display">
             <div class="timer-display-label">Current Timer</div>
             <div class="timer-display-time inactive" id="displayTimer">--:--</div>
+            <div class="overtime" id="overtime" style="display: none;"></div>
         </div>
 
         <div class="link">
@@ -250,7 +266,6 @@
             const pauseBtn = document.getElementById('pauseBtn');
             
             if (active && !pausedAt) {
-                // Pause
                 const endTime = parseInt(localStorage.getItem('timerEndTime'));
                 const remainingMs = endTime - Date.now();
                 localStorage.setItem('timerPausedAt', Date.now());
@@ -259,7 +274,6 @@
                 pauseBtn.textContent = 'Resume';
                 pauseBtn.classList.add('resume');
             } else if (pausedAt) {
-                // Resume
                 const remainingMs = parseInt(localStorage.getItem('timerRemainingMs'));
                 const newEndTime = Date.now() + remainingMs;
                 localStorage.setItem('timerEndTime', newEndTime);
@@ -276,6 +290,9 @@
             localStorage.setItem('timerActive', 'false');
             localStorage.removeItem('timerPausedAt');
             localStorage.removeItem('timerRemainingMs');
+            const overtimeEl = document.getElementById('overtime');
+            overtimeEl.style.display = 'none';
+            overtimeEl.textContent = ''
             document.getElementById('status').textContent = 'Ready';
             
             updateButtonStates();
@@ -306,11 +323,14 @@
         }
 
         function updateDisplayTimer() {
+            const overtimeEl = document.getElementById('overtime');
             const active = localStorage.getItem('timerActive') === 'true';
             const endTime = parseInt(localStorage.getItem('timerEndTime'));
             const pausedAt = localStorage.getItem('timerPausedAt');
             const displayEl = document.getElementById('displayTimer');
 
+            overtimeEl.style.display = 'none';
+            overtimeEl.textContent = '';
             if (!active || !endTime) {
                 displayEl.textContent = '--:--';
                 displayEl.className = 'timer-display-time inactive';
@@ -320,17 +340,26 @@
 
             let remaining;
             if (pausedAt) {
-                // Paused - show frozen remaining time
                 remaining = parseInt(localStorage.getItem('timerRemainingMs'));
             } else {
-                // Running - calculate current remaining time
                 const now = Date.now();
                 remaining = endTime - now;
             }
 
             if (remaining <= 0) {
-                displayEl.textContent = '0:00';
-                displayEl.className = 'timer-display-time warning';
+                overtimeEl.style.display = 'none';
+                overtimeEl.textContent = '';
+                const overtimeSeconds = Math.floor((Date.now() - endTime) / 1000);
+                const overtimeMinutes = Math.floor(overtimeSeconds / 60);
+                const overtimeRemainder = overtimeSeconds % 60;
+
+                const overtimeText = `${overtimeMinutes}:${overtimeRemainder.toString().padStart(2, '0')}`;
+                displayEl.textContent = '';
+                displayEl.className = 'timer-display-time';
+
+                overtimeEl.innerHTML = `Overtime<span class="overtime-time">${overtimeText}</span>`;
+                overtimeEl.style.display = 'block';
+
                 updateButtonStates();
                 return;
             }
@@ -345,10 +374,10 @@
                 : 'timer-display-time';
         }
 
-        // Update display timer every 100ms
+
         setInterval(updateDisplayTimer, 100);
 
-        // Check timer status on load
+
         window.addEventListener('load', () => {
             updateDisplayTimer();
             updateButtonStates();
